@@ -1,17 +1,17 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 
 # --- Page Config ---
 st.set_page_config(page_title="Expense Tracker", page_icon="💰")
 
-# --- Session State Initialization ---
-# This keeps the data alive as long as the browser tab is open
+# --- Session State ---
 if 'expenses' not in st.session_state:
     st.session_state.expenses = []
 if 'budget' not in st.session_state:
     st.session_state.budget = 0.0
 
-# --- Sidebar: Budget Settings ---
+# --- Sidebar ---
 with st.sidebar:
     st.header("⚙️ Settings")
     budget_input = st.number_input(
@@ -23,48 +23,37 @@ with st.sidebar:
     
     if st.button("Update Budget"):
         st.session_state.budget = budget_input
-        st.success(f"Budget set to ${budget_input:,.2f}")
+        st.success("Budget Updated!")
 
     st.divider()
-    
-    # Option to clear data
     if st.button("Clear All Data"):
         st.session_state.expenses = []
         st.rerun()
 
-# --- Main Page ---
 st.title("💰 Personal Expense Tracker")
 
-# 1. Input Form
+# --- Input Form (Always Visible) ---
 with st.expander("➕ Add New Expense", expanded=True):
     with st.form("expense_form", clear_on_submit=True):
         col1, col2 = st.columns(2)
-        
         with col1:
-            name = st.text_input("Description (e.g., Groceries)")
+            name = st.text_input("Description")
         with col2:
             amount = st.number_input("Amount", min_value=0.01, step=1.0)
-            
-        category = st.selectbox(
-            "Category", 
-            ["Food", "Transport", "Utilities", "Entertainment", "Shopping", "Other"]
-        )
+        category = st.selectbox("Category", ["Food", "Transport", "Utilities", "Entertainment", "Shopping", "Other"])
         
-        submitted = st.form_submit_button("Add Expense")
-        
-        if submitted:
+        if st.form_submit_button("Add Expense"):
             if name and amount > 0:
-                new_expense = {
-                    "Description": name,
-                    "Amount": amount,
+                st.session_state.expenses.append({
+                    "Description": name, 
+                    "Amount": amount, 
                     "Category": category
-                }
-                st.session_state.expenses.append(new_expense)
-                st.success("Expense added!")
+                })
+                st.success("Added!")
             else:
-                st.warning("Please enter a description and a valid amount.")
+                st.warning("Please fill in all fields.")
 
-# --- Calculations ---
+# --- Data Processing ---
 if st.session_state.expenses:
     df = pd.DataFrame(st.session_state.expenses)
     total_spent = df["Amount"].sum()
@@ -74,46 +63,63 @@ else:
 
 remaining = st.session_state.budget - total_spent
 
-# --- Dashboard Metrics ---
-st.divider()
-m1, m2, m3 = st.columns(3)
+# --- TABS ---
+tab1, tab2 = st.tabs(["📊 Dashboard", "🥧 Analysis"])
 
-m1.metric("Total Budget", f"${st.session_state.budget:,.2f}")
-m2.metric("Total Spent", f"${total_spent:,.2f}")
-m3.metric(
-    "Remaining", 
-    f"${remaining:,.2f}", 
-    delta=f"{remaining:,.2f}", 
-    delta_color="normal"
-)
+# TAB 1: Overview
+with tab1:
+    # Metrics
+    c1, c2, c3 = st.columns(3)
+    c1.metric("Budget", f"${st.session_state.budget:,.2f}")
+    c2.metric("Spent", f"${total_spent:,.2f}")
+    c3.metric("Remaining", f"${remaining:,.2f}", delta=remaining)
 
-# --- Progress Bar ---
-if st.session_state.budget > 0:
-    progress = total_spent / st.session_state.budget
-    # Cap progress at 1.0 (100%) to prevent errors if over budget
-    bar_value = min(progress, 1.0)
-    
-    st.write("### Budget Usage")
-    st.progress(bar_value)
-    
-    if total_spent > st.session_state.budget:
-        st.error(f"⚠️ You are over budget by ${total_spent - st.session_state.budget:,.2f}!")
-    elif bar_value > 0.8:
-        st.warning("⚠️ You are nearing your budget limit.")
+    # Progress Bar
+    if st.session_state.budget > 0:
+        progress = min(total_spent / st.session_state.budget, 1.0)
+        st.progress(progress)
+        if total_spent > st.session_state.budget:
+            st.error("⚠️ Budget Exceeded!")
 
-# --- Visualizations & Data ---
-if not df.empty:
-    col_chart, col_data = st.columns([2, 1])
+    # Recent Transactions
+    st.subheader("Recent Transactions")
+    if not df.empty:
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("No expenses yet.")
+
+# TAB 2: Analysis (Pie Chart)
+with tab2:
+    st.subheader("Expense Breakdown")
     
-    with col_chart:
-        st.subheader("Expenses by Category")
-        # Group data by category for the chart
-        chart_data = df.groupby("Category")["Amount"].sum()
-        st.bar_chart(chart_data)
+    if not df.empty:
+        # 1. Create the Pie Chart
+        fig = px.pie(
+            df, 
+            values='Amount', 
+            names='Category', 
+            title='Spending by Category',
+            hole=0.4, # Makes it a donut chart
+            color_discrete_sequence=px.colors.qualitative.Pastel
+        )
+        # Display Pie Chart
+        st.plotly_chart(fig, use_container_width=True)
+
+        # 2. Category Statistics Text
+        st.divider()
         
-    with col_data:
-        st.subheader("History")
-        st.dataframe(df, hide_index=True, use_container_width=True)
+        # Group by category to find highest spender
+        category_group = df.groupby("Category")["Amount"].sum().sort_values(ascending=False)
+        top_category = category_group.index[0]
+        top_amount = category_group.iloc[0]
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            st.info(f"**Highest Spending:** {top_category} (${top_amount:,.2f})")
+        with col_b:
+            count = len(df)
+            avg = total_spent / count
+            st.info(f"**Average per Transaction:** ${avg:,.2f}")
 
-else:
-    st.info("Start by adding an expense above!")
+    else:
+        st.info("Add expenses to see the analysis.")
