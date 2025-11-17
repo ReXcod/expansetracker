@@ -115,11 +115,11 @@ with tab2:
         
         col_a, col_b = st.columns(2)
         with col_a:
-            st.info(f"**Highest Spending:** {top_category} (${top_amount:,.2f})")
+            st.info(f"**Highest Spending:** {top_category} (₹ {top_amount:,.2f})")
         with col_b:
             count = len(df)
             avg = total_spent / count
-            st.info(f"**Average per Transaction:** ${avg:,.2f}")
+            st.info(f"**Average per Transaction:** ₹ {avg:,.2f}")
 
     else:
         st.info("Add expenses to see the analysis.")
