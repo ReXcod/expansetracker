@@ -70,9 +70,9 @@ tab1, tab2 = st.tabs(["Dashboard", "Analysis"])
 with tab1:
     # Metrics
     c1, c2, c3 = st.columns(3)
-    c1.metric("Budget", f"${st.session_state.budget:,.2f}")
-    c2.metric("Spent", f"${total_spent:,.2f}")
-    c3.metric("Remaining", f"${remaining:,.2f}", delta=remaining)
+    c1.metric("Budget", f"₹{st.session_state.budget:,.2f}")
+    c2.metric("Spent", f"₹{total_spent:,.2f}")
+    c3.metric("Remaining", f"₹{remaining:,.2f}", delta=remaining)
 
     # Progress Bar
     if st.session_state.budget > 0:
