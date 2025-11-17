@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 
 # --- Page Config ---
-st.set_page_config(page_title="Expense Tracker", page_icon="💰")
+st.set_page_config(page_title="Expense Tracker", page_icon=" ")
 
 # --- Session State ---
 if 'expenses' not in st.session_state:
@@ -13,7 +13,7 @@ if 'budget' not in st.session_state:
 
 # --- Sidebar ---
 with st.sidebar:
-    st.header("⚙️ Settings")
+    st.header("Settings")
     budget_input = st.number_input(
         "Set Monthly Budget", 
         min_value=0.0, 
@@ -30,7 +30,7 @@ with st.sidebar:
         st.session_state.expenses = []
         st.rerun()
 
-st.title("💰 Personal Expense Tracker")
+st.title("Personal Expense Tracker")
 
 # --- Input Form (Always Visible) ---
 with st.expander("➕ Add New Expense", expanded=True):
@@ -64,7 +64,7 @@ else:
 remaining = st.session_state.budget - total_spent
 
 # --- TABS ---
-tab1, tab2 = st.tabs(["📊 Dashboard", "🥧 Analysis"])
+tab1, tab2 = st.tabs(["Dashboard", "Analysis"])
 
 # TAB 1: Overview
 with tab1:
@@ -79,7 +79,7 @@ with tab1:
         progress = min(total_spent / st.session_state.budget, 1.0)
         st.progress(progress)
         if total_spent > st.session_state.budget:
-            st.error("⚠️ Budget Exceeded!")
+            st.error("Budget Exceeded!")
 
     # Recent Transactions
     st.subheader("Recent Transactions")
